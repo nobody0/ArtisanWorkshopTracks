@@ -1,5 +1,7 @@
 package com.sig.rs.Tasks;
+import com.sig.rs.utils.Utils;
 
+import com.sun.corba.se.impl.javax.rmi.CORBA.Util;
 import org.powerbot.script.rt6.*;
 import org.powerbot.script.rt6.ClientContext;
 import org.powerbot.script.Condition;
@@ -166,7 +168,7 @@ public class ArtisanTracks extends Task<ClientContext> {
             }
         }
 
-        Condition.sleep(1500);
+        Condition.sleep(Utils.getInstance().rand(1000, 1500));
     }
 
     private void takeIngotOrDeposit()
@@ -211,19 +213,21 @@ public class ArtisanTracks extends Task<ClientContext> {
     {
         System.out.println("takeIngot");
         if (!smithTakeButton.visible()) {
-            GameObject trough = ctx.objects.select().id(troughIds[ingotToUse]).nearest().poll();
+            final GameObject trough = ctx.objects.select().id(troughIds[ingotToUse]).nearest().poll();
             if (trough.valid())
             {
                 if(!trough.inViewport()) {
-                    ctx.movement.step(trough);
                     ctx.camera.turnTo(trough);
-                    Condition.sleep(2000);
-                }
-                if(!trough.inViewport()) {
-                    Condition.sleep(2000);
-                }
-                if(!trough.inViewport()) {
-                    Condition.sleep(2000);
+                    ctx.movement.step(trough);
+                    boolean result = Condition.wait(new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return trough.inViewport();
+                        }
+                    }, 1000, 10);
+                    if (!result) {
+                        return;
+                    }
                 }
 
                 trough.interact("Take-ingots");
@@ -255,21 +259,21 @@ public class ArtisanTracks extends Task<ClientContext> {
         if (!smithTakeButton.visible()) {
             System.out.println("!smithTakeButton.visible()");
 
-            GameObject anvil = ctx.objects.select().id(anvilId).nearest().poll();
+            final GameObject anvil = ctx.objects.select().id(anvilId).nearest().poll();
             if (anvil.valid())
             {
                 if(!anvil.inViewport()) {
-                    ctx.movement.step(anvil);
                     ctx.camera.turnTo(anvil);
-                    Condition.sleep(2000);
-                }
-
-                if(!anvil.inViewport()) {
-                    Condition.sleep(2000);
-                }
-
-                if(!anvil.inViewport()) {
-                    Condition.sleep(2000);
+                    ctx.movement.step(anvil);
+                    boolean result = Condition.wait(new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return anvil.inViewport();
+                        }
+                    }, 1000, 10);
+                    if (!result) {
+                        return;
+                    }
                 }
 
                 anvil.interact("Smith");
@@ -284,7 +288,7 @@ public class ArtisanTracks extends Task<ClientContext> {
 
         if (smithTakeButton.visible()) {
             getItemComponent(itemToSmith).click();
-            Condition.sleep(1000);
+            Condition.sleep(Utils.getInstance().rand(900, 1200));
 
             smithTakeButton.click();
 
@@ -329,45 +333,46 @@ public class ArtisanTracks extends Task<ClientContext> {
         System.out.println("depositComponents");
         int hundredPercentItemId = components[ingotToUse][components[ingotToUse].length-1];
         if (ctx.backpack.select().id(hundredPercentItemId).count() >= 14) {
-            GameObject tunnel = ctx.objects.select().id(tunnelIds).shuffle().poll();
+            final GameObject tunnel = ctx.objects.select().id(tunnelIds).shuffle().poll();
             if (tunnel.valid())
             {
+                ctx.camera.turnTo(tunnel);
                 if(!tunnel.inViewport()) {
                     ctx.movement.step(tunnel);
-                    ctx.camera.turnTo(tunnel);
-                    Condition.sleep(4000);
-                }
-                if(!tunnel.inViewport()) {
-                    Condition.sleep(2000);
-                }
-                if(!tunnel.inViewport()) {
-                    Condition.sleep(2000);
-                }
-                if(!tunnel.inViewport()) {
-                    Condition.sleep(2000);
+                    boolean result = Condition.wait(new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return tunnel.inViewport();
+                        }
+                    }, 1000, 10);
+                    if (!result) {
+                        return;
+                    }
                 }
 
                 tunnel.interact("Lay-tracks");
-                Condition.sleep(5500);
+                Condition.sleep(Utils.getInstance().rand(4500, 6000));
             }
         } else {
-            GameObject mineCart = ctx.objects.select().id(mineCartId).shuffle().poll();
+            final GameObject mineCart = ctx.objects.select().id(mineCartId).shuffle().poll();
             if (mineCart.valid())
             {
                 if(!mineCart.inViewport()) {
-                    ctx.movement.step(mineCart);
                     ctx.camera.turnTo(mineCart);
-                    Condition.sleep(1500);
-                }
-                if(!mineCart.inViewport()) {
-                    Condition.sleep(1500);
-                }
-                if(!mineCart.inViewport()) {
-                    Condition.sleep(1500);
+                    ctx.movement.step(mineCart);
+                    boolean result = Condition.wait(new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return mineCart.inViewport();
+                        }
+                    }, 1000, 10);
+                    if (!result) {
+                        return;
+                    }
                 }
 
                 mineCart.interact("Deposit-components");
-                Condition.sleep(2500);
+                Condition.sleep(Utils.getInstance().rand(2000, 3000));
             }
         }
 
