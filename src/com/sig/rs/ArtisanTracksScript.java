@@ -1,40 +1,52 @@
 package com.sig.rs;
 
-import com.sig.rs.Tasks.*;
-import org.powerbot.script.Script;
-import org.powerbot.script.Condition;
-import org.powerbot.script.PollingScript;
-import org.powerbot.script.rt6.ClientContext;
-import org.powerbot.script.PaintListener;
+import com.sig.rs.Tasks.Task;
+import com.sig.rs.Tasks.ArtisanTracks.*;
+import com.sig.rs.Blackboard.ArtisanBlackboard;
+import static com.sig.rs.Blackboard.ArtisanBlackboard.*;
 
-import org.powerbot.script.rt6.Game;
+import org.powerbot.script.Script;
+import org.powerbot.script.PollingScript;
+import org.powerbot.script.rt6.*;
+import org.powerbot.script.PaintListener;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Random;
 import java.util.Date;
 import java.io.File;
 import java.text.SimpleDateFormat;
 import javax.imageio.ImageIO;
-import java.awt.Dimension;
-import java.awt.geom.Dimension2D;
 
 @Script.Manifest(name="Artisan Track Maker", description="Automatically makes the best Tracks inside the Artisan Workshop", properties="topic=0")
 
 public class ArtisanTracksScript extends PollingScript<ClientContext> implements PaintListener {
-    private List<Task> taskList = new ArrayList<Task>();
+    private boolean init = true;
 
-    private ArtisanTracks artisanTracks;
+    private List<Task> taskList = new ArrayList<Task>();
 
     @Override
     public void start() {
-        artisanTracks = new ArtisanTracks(ctx);
+        smithComponentsWrapperComponent.set(ctx.widgets.component(1371, 44));
+        smithTakeButton.set(ctx.widgets.component(1370, 33).component(4));
+        smithingInProggressComponent.set(ctx.widgets.component(1251, 0));
+
+        smithingLevelRealStart.set(ctx.skills.realLevel(Constants.SKILLS_SMITHING));
+        smithingExpStart.set(ctx.skills.experience(Constants.SKILLS_SMITHING));
+
+        smithingLevel.set(ctx.skills.level(Constants.SKILLS_SMITHING));
+        smithingRealLevel.set(ctx.skills.realLevel(Constants.SKILLS_SMITHING));
+        smithingExp.set(ctx.skills.experience(Constants.SKILLS_SMITHING));
+
         taskList.addAll(Arrays.asList(
-                artisanTracks
+                new ArtisanTracksTakeIngots(ctx),
+                new ArtisanTracksSmithing(ctx),
+                new ArtisanTracksDeposit(ctx)
         ));
+
+        init = false;
     }
 
     @Override
@@ -50,22 +62,21 @@ public class ArtisanTracksScript extends PollingScript<ClientContext> implements
 
     @Override
     public void repaint(Graphics graphics) {
-        if (artisanTracks == null)
-        {
+        if (init) {
             return;
         }
 
         final Graphics2D g = (Graphics2D) graphics;
         g.setFont(TAHOMA);
 
-        final int expGained = artisanTracks.getCurrentExp() - artisanTracks.getStartExp();
+        final int expGained = smithingExp.get() - smithingExpStart.get();
         final int expHr = (int) ((expGained * 3600000D) / getRuntime());
-        final int level = artisanTracks.getCurrentLevel();
-        final int levelGained = artisanTracks.getCurrentLevel() - artisanTracks.getStartLevel();
+        final int level = smithingRealLevel.get();
+        final int levelGained = level - smithingLevelRealStart.get();
 
-        final String ingotToUse = artisanTracks.getIngotToUseName();
-        final String highestComponent = artisanTracks.getHighestComponentToSmithName();
-        final String currentComponent = artisanTracks.getCurrentComponentToSmithName();
+        final String ingotToUse = getIngotToUseName();
+        final String highestComponent = getHighestComponentToSmithName();
+        final String currentComponent = getCurrentComponentToSmithName();
 
         g.setColor(Color.BLACK);
 
