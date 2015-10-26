@@ -11,6 +11,8 @@ import org.powerbot.script.rt6.Constants;
 import org.powerbot.script.rt6.GameObject;
 import org.powerbot.script.rt6.Item;
 
+import java.util.concurrent.Callable;
+
 import static com.sig.rs.Blackboard.ArtisanBlackboard.*;
 
 public class ArtisanTracksTakeIngots extends Task<ClientContext> {
@@ -43,21 +45,36 @@ public class ArtisanTracksTakeIngots extends Task<ClientContext> {
                 if(!trough.inViewport()) {
                     ctx.camera.turnTo(trough);
                     ctx.movement.step(trough);
-                    boolean result = Condition.wait(trough::inViewport, 1000, 10);
+                    boolean result = Condition.wait(new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return trough.inViewport();
+                        }
+                    }, 1000, 10);
                     if (!result) {
                         return;
                     }
                 }
 
                 trough.interact("Take-ingots");
-                Condition.wait(smithTakeButton.get()::visible, 500, 10);
+                Condition.wait(new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        return smithTakeButton.get().visible();
+                    }
+                }, 500, 10);
             }
         }
 
         if (smithTakeButton.get().visible()) {
             smithTakeButton.get().click();
 
-            Condition.wait(() -> ctx.backpack.select().count() >= 28 && !smithTakeButton.get().visible(), 500, 10);
+            Condition.wait(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return ctx.backpack.select().count() >= 28 && !smithTakeButton.get().visible();
+                }
+            }, 500, 10);
         }
     }
 
