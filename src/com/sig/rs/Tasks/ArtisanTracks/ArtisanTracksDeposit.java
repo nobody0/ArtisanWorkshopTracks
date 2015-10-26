@@ -6,6 +6,8 @@ import org.powerbot.script.Condition;
 import org.powerbot.script.Random;
 import org.powerbot.script.rt6.*;
 
+import java.util.concurrent.Callable;
+
 import static com.sig.rs.Blackboard.ArtisanBlackboard.*;
 
 public class ArtisanTracksDeposit extends Task<ClientContext> {
@@ -32,14 +34,29 @@ public class ArtisanTracksDeposit extends Task<ClientContext> {
                 ctx.camera.turnTo(tunnel);
                 if(!tunnel.inViewport()) {
                     ctx.movement.step(tunnel);
-                    boolean result = Condition.wait(tunnel::inViewport, 1000, 10);
+                    boolean result = Condition.wait(new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return tunnel.inViewport();
+                        }
+                    }, 1000, 10);
                     if (!result) {
                         return;
                     }
                 }
 
                 tunnel.interact("Lay-tracks");
-                Condition.wait(() -> ctx.players.local().tile().distanceTo(tunnel.tile()) <= 2, 1000, 10);
+                Condition.wait(new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        return ctx.players.local().tile().distanceTo(tunnel.tile()) <= 2;
+                    }
+                }, 1000, 10);
+
+                smithingLevel.set(ctx.skills.level(Constants.SKILLS_SMITHING));
+                smithingRealLevel.set(ctx.skills.realLevel(Constants.SKILLS_SMITHING));
+                smithingExp.set(ctx.skills.experience(Constants.SKILLS_SMITHING));
+
                 Condition.sleep(Random.nextInt(2500, 3500));
             }
         } else {
@@ -49,7 +66,12 @@ public class ArtisanTracksDeposit extends Task<ClientContext> {
                 if(!mineCart.inViewport()) {
                     ctx.camera.turnTo(mineCart);
                     ctx.movement.step(mineCart);
-                    boolean result = Condition.wait(mineCart::inViewport, 1000, 10);
+                    boolean result = Condition.wait(new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return !mineCart.inViewport();
+                        }
+                    }, 1000, 10);
                     if (!result) {
                         return;
                     }
