@@ -5,15 +5,17 @@ import com.sig.rs.Blackboard.ArtisanBlackboard;
 import static com.sig.rs.Blackboard.ArtisanBlackboard.*;
 
 import org.powerbot.script.Condition;
+import org.powerbot.script.Filter;
 import org.powerbot.script.Random;
 import org.powerbot.script.rt6.*;
+
+import java.util.concurrent.Callable;
 
 public class ArtisanTracksSmithing extends Task<ClientContext> {
     public ArtisanTracksSmithing(ClientContext ctx) {
         super(ctx);
 
         updateHighestComponentToSmith();
-        smithingLevel.onChange((oldValue) -> updateHighestComponentToSmith());
     }
 
     @Override
@@ -41,10 +43,27 @@ public class ArtisanTracksSmithing extends Task<ClientContext> {
                 return;
             }
         }
+
+        reset();
+    }
+
+    private void reset()
+    {
+        System.out.println("reset");
+
+        for(Item item : ctx.backpack.select()) {
+            if (item.id() != ingots[ingotToUse.get()]) {
+                item.interact("Drop");
+            }
+        }
+
+        Condition.sleep(Random.nextInt(1000, 1500));
     }
 
     private void smithComponent(final int componentToSmith)
     {
+        updateHighestComponentToSmith();
+
         System.out.println("smithComponent");
         System.out.println(componentToSmith);
         if (!smithTakeButton.get().visible()) {
@@ -56,14 +75,24 @@ public class ArtisanTracksSmithing extends Task<ClientContext> {
                 if(!anvil.inViewport()) {
                     ctx.camera.turnTo(anvil);
                     ctx.movement.step(anvil);
-                    boolean result = Condition.wait(anvil::inViewport, 1000, 10);
+                    boolean result = Condition.wait(new Callable<Boolean>() {
+                        @Override
+                        public Boolean call() throws Exception {
+                            return anvil.inViewport();
+                        }
+                    }, 1000, 10);
                     if (!result) {
                         return;
                     }
                 }
 
                 anvil.interact("Smith");
-                Condition.wait(smithTakeButton.get()::visible, 500, 10);
+                Condition.wait(new Callable<Boolean>() {
+                    @Override
+                    public Boolean call() throws Exception {
+                        return smithTakeButton.get().visible();
+                    }
+                }, 500, 10);
             }
         }
 
@@ -73,12 +102,22 @@ public class ArtisanTracksSmithing extends Task<ClientContext> {
 
             smithTakeButton.get().click();
 
-            boolean result = Condition.wait(smithingInProggressComponent.get()::visible, 500, 10);
+            boolean result = Condition.wait(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return smithingInProggressComponent.get().visible();
+                }
+            }, 500, 10);
             if (!result) {
                 return;
             }
 
-            result = Condition.wait(() -> !smithingInProggressComponent.get().visible() && !smithTakeButton.get().visible(), 1000, 50);
+            result = Condition.wait(new Callable<Boolean>() {
+                @Override
+                public Boolean call() throws Exception {
+                    return !smithingInProggressComponent.get().visible() && !smithTakeButton.get().visible();
+                }
+            }, 1000, 50);
             if (!result) {
                 return;
             }
